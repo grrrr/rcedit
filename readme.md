@@ -2,7 +2,9 @@ rcedit – programmatic access to Research catalogue web interface
 ================================================================
 
 Import editor class from rcedit module using
-```from rcedit import RCEdit```
+```
+from rcedit import RCEdit
+```
 
 The `RCEdit` class provides access to most of the features of a Research catalogue exposition.
 
@@ -19,7 +21,7 @@ print("Pages:", pages)
 # will print a dict of {page_id: page_name, ...}
 
 # add new page (aka weave) to exposition
-# page_id = rc.page_add(page_name, description="all about my page")
+# page_id = rc.page_add(page_name, description='all about my page')
 
 # remove page
 # rc.page_remove(page_id)
