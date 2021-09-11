@@ -197,7 +197,7 @@ class RCEdit:
         return self._ItemLister()(rtext)
         
     def item_add(self, page_id, media_id, x, y, w, h=0, tool='picture'):
-        "Add picture to page (aka weave)"
+        "Add item to page (aka weave)"
         data = dict(
             research=self.exposition,
             weave=page_id,
@@ -238,7 +238,7 @@ class RCEdit:
         rtext = self._get("/item/edit", params=dict(research=self.exposition, item=item_id))
         return rc._ItemData()(rtext)
         
-    def item_edit(self, item_id, **kwargs):
+    def item_set(self, item_id, **kwargs):
         """
         Not exactly sure what is needed in data to server.
         Use item_get before and update the returned dict
