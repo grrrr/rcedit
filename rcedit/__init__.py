@@ -232,23 +232,17 @@ class RCEdit:
         item_id = m.group(1)
         return item_id
 
-    def item_update(self, item_id, x=None, y=None, w=None, h=None, r=None):
-        "Item positioning update"
-
+    def item_update(self, item_id, x, y, w, h, r=0):
+        "Fast item positioning update"
         data = {
             'research': self.exposition,
             f'item[{item_id}]': item_id,
+            f'left[{item_id}]': x,
+            f'top[{item_id}]': y,
+            f'width[{item_id}]': w,
+            f'height[{item_id}]': h,
+            f'rotate[{item_id}]': r,
         }
-        if x is not None:
-            data[f'left[{item_id}]'] = x
-        if y is not None:
-            data[f'top[{item_id}]'] = y
-        if w is not None:
-            data[f'width[{item_id}]'] = w
-        if h is not None:
-            data[f'height[{item_id}]'] = h
-        if r is not None:
-            data[f'rotate[{item_id}]'] = r
         rtext = self._post('/item/update', data=data)
         if rtext.strip():
             raise RCException("item_update failed")
@@ -264,8 +258,7 @@ class RCEdit:
         
     def item_set(self, item_id, **kwargs):
         """
-        Not exactly sure what is needed in data to server.
-        Use item_get before and update the returned dict
+        In kwargs, we need at least common[title] and style[top,left,width,height,rotate]
         """
         data = dict(
             research=self.exposition, 
