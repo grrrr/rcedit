@@ -1,3 +1,6 @@
+# rcedit – programmatic access to Research catalogue web interface
+# (c)2021 grrrr.org
+
 import requests
 import re
 import urllib
