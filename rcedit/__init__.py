@@ -69,6 +69,8 @@ class RCEdit:
     
     def page_remove(self, page_id):
         self._post("/weave/remove", data=dict(weave=page_id, confirmation='confirmation'))
+        if rtext.strip():
+            raise RCException("page_remove failed")
         
     license_options = {
         "all-rights-reserved", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd", "public-domain"        
@@ -112,7 +114,9 @@ class RCEdit:
     def mediaset_remove(self, mediaset_id):
         "Remove media set"
         rtext = self._post('/work/remove', data={'research': self.exposition, 'work[]': mediaset_id, 'confirmation': 'confirmation'})
-    
+        if rtext.strip():
+            raise RCException("mediaset_remove failed")
+
     media_types = {'image', 'audio'}
 
     def media_list(self, mediaset_id=None):
@@ -245,10 +249,14 @@ class RCEdit:
             data[f'height[{item_id}]'] = h
         if r is not None:
             data[f'rotate[{item_id}]'] = r
-        self._post('/item/update', data=data)
+        rtext = self._post('/item/update', data=data)
+        if rtext.strip():
+            raise RCException("item_update failed")
 
     def item_lock(self, item_id, lock=True):
-        self._post('/item/update-lock', data={f'lock[{item_id}]': 1 if lock else 0})
+        rtext = self._post('/item/update-lock', data={f'lock[{item_id}]': 1 if lock else 0})
+        if rtext.strip():
+            raise RCException("item_lock failed")
 
     def item_get(self, item_id):
         rtext = self._get("/item/edit", params=dict(research=self.exposition, item=item_id))
@@ -268,11 +276,18 @@ class RCEdit:
             for k,v in kv.items():
                 data[f'{kk}[{k}]'] = v
 
-        self._post("/item/edit", data=data)
+        rtext = self._post("/item/edit", data=data)
+        if rtext.strip():
+            raise RCException("item_set failed")
         
     def item_remove(self, item_id):
         "Remove item from page (aka weave)"
-        self._post("/item/remove", data={'research': self.exposition, 'item[]': item_id, 'confirmation': 'confirmation'})
+        rtext = self._post("/item/remove", data={'research': self.exposition, 'item[]': item_id, 'confirmation': 'confirmation'})
+        if rtext.strip():
+            raise RCException("item_remove failed")
+
+
+    #### internal methods #####################################################
     
     class _PageLister(HTMLParser):
         def __call__(self, html):
