@@ -11,7 +11,7 @@ The `RCEdit` class provides access to most of the features of a Research catalog
 Example:
 ```
 # create RCEdit instance with exposition ID as argument
-rc = RCEdit('1234567')
+rc = RCEdit(1234567)
 # log in using RC credentials
 rc.login(username='my@email.com', password='goodpassword')
 
