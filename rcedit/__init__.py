@@ -68,7 +68,7 @@ class RCEdit:
         return page_id
     
     def page_remove(self, page_id):
-        self._post("/weave/remove", data=dict(weave=page_id, confirmation='confirmation'))
+        rtext = self._post("/weave/remove", data=dict(weave=page_id, confirmation='confirmation'))
         if rtext.strip():
             raise RCException("page_remove failed")
         
