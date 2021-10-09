@@ -1,4 +1,5 @@
 .*
 *.whl
-rcedit.egg-info
+rcedit_grrrr.org.egg-info/
 __pycache__
+dist/
