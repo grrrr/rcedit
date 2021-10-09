@@ -1,4 +1,4 @@
-rcedit – programmatic access to Research catalogue web interface
+rcedit – Programmatic access to Research Catalogue web interface
 ================================================================
 
 Import editor class from rcedit module using

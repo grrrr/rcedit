@@ -1,2 +1,4 @@
 .*
+*.whl
 rcedit.egg-info
+__pycache__
