@@ -22,6 +22,7 @@ import urllib
 from html.parser import HTMLParser
 import json
 import time
+from collections import defaultdict
 
 class RCException(Exception):
     def __init__(self, reason=""):
@@ -256,7 +257,7 @@ class RCEdit:
 
     def item_get(self, item_id):
         rtext = self._get("/item/edit", params=dict(research=self.exposition, item=item_id))
-        return rc._ItemData()(rtext)
+        return self._ItemData()(rtext)
         
     def item_set(self, item_id, **kwargs):
         """
