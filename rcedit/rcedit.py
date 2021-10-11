@@ -202,6 +202,9 @@ class RCEdit:
         elif filename.endswith('.mp3'):
             mimetype = 'audio/mpeg'
             mediatype = 'audio'
+        elif filename.endswith('.wav'):
+            mimetype = 'audio/wave'
+            mediatype = 'audio'
         else:
             raise ValueError('File type unknown')
         with open(filename, 'rb') as f:
