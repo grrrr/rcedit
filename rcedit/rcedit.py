@@ -24,29 +24,38 @@ import json
 import time
 from collections import defaultdict
 
+
 class RCException(Exception):
     def __init__(self, reason=""):
         self.reason = reason
     def __repr__(self):
         return f'RCException("{self.reason}")'
 
+
 class RCEdit:
     rcurl = "https://www.researchcatalogue.net"
-    
+
     def __init__(self, exposition):
         self.session = requests.Session()
         self.exposition = exposition
-        
+
+
     def login(self, username, password):
         rtext = self._post("/session/login", data=dict(username=username, password=password))
         if rtext.strip():
             raise RCException("login failed")
-        
+
+
     def logout(self):
         self._get("/session/logout")
-        
+
+
     def page_list(self, page_name=None, firstonly=False, regexp=False):
         "List pages (aka weaves), optionally filtered"
+        
+        # TODO: should we return id:(type,name) in _PageLister?
+        # this would break backwards compatibility
+        
         rtext = self._post("/editor/weaves", data=dict(research=self.exposition))
         pages = self._PageLister()(rtext)
         
@@ -65,12 +74,14 @@ class RCEdit:
             return pages[0] if len(pages) else None
         else:
             return dict(pages)
-                
-    def page_add(self, pagename, description=None, **kwargs):
+
+
+    def page_add(self, page_name, page_type='graphical', description=None, **kwargs):
         # kwargs can be 'style' or 'meta' dicts
         data = {
             'research': self.exposition,
-            'meta[title][en]': pagename,
+            'meta[title][en]': page_name,
+            'weave-type': page_type,
         #    'meta[iframe]': '',
         #    'style[marginleft]': 0,
         #    'style[margintop]': 0,
@@ -85,16 +96,23 @@ class RCEdit:
                 data[f'{kk}[{k}]'] = v
 
         page_id = self._post("/weave/add", data=data)
-        return page_id
-    
+        try:
+            int(page_id)
+            return page_id
+        except ValueError:
+            raise RCException("page_add failed")
+
+
     def page_remove(self, page_id):
         rtext = self._post("/weave/remove", data=dict(weave=page_id, confirmation='confirmation'))
         if rtext.strip():
             raise RCException("page_remove failed")
+
         
     license_options = {
         "all-rights-reserved", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd", "public-domain"        
     }
+
     
     mediaset_genres = {
         # publication
@@ -107,7 +125,8 @@ class RCEdit:
         'photograph', 'painting', 'scale model', 'digital artwork', 'visualisation', 'illustration', 
         'ceramic', 'print', 'construction', 'drawing', 'video', 'composition', 'movie',
     }
-    
+
+
     def mediaset_list(self, mediaset_name=None, firstonly=False, regexp=False):
         "List media sets (aka works), optionally filtered"
         rtext = self._post('/editor/works', data=dict(research=self.exposition))
@@ -129,8 +148,10 @@ class RCEdit:
         else:
             return dict(mediasets)
 
+
     def mediaset_find(self, ):
         "Find media set by name"
+
 
     def mediaset_add(self, mediaset_name, mediaset_genre, authors, copyright, date=None):
         "Add new media set"
@@ -148,14 +169,17 @@ class RCEdit:
         }
         mediaset_id = self._post("/work/add", data=data)
         return mediaset_id
-    
+
+
     def mediaset_remove(self, mediaset_id):
         "Remove media set"
         rtext = self._post('/work/remove', data={'research': self.exposition, 'work[]': mediaset_id, 'confirmation': 'confirmation'})
         if rtext.strip():
             raise RCException("mediaset_remove failed")
 
+
     media_types = {'image', 'audio'}
+
 
     def media_list(self, mediaset_id=None, media_name=None, media_type=None, firstonly=False, regexp=False):
         # as of 2021-12, one must provide a weave ID
@@ -229,7 +253,8 @@ class RCEdit:
             raise RCException("media_add failed")
         media_id = m.group(1)
         return media_id
-    
+
+
     def media_remove(self, media_id, mediaset_id=None):
         if mediaset_id is None:
             # Remove media from exposition
@@ -243,6 +268,7 @@ class RCEdit:
             rtext = self._post('/work/remove-file', data=dict(research=self.exposition, work=mediaset_id, file=media_id, confirmation='confirmation'))
         if rtext.strip():
             raise RCException("media_remove failed")
+
 
     def media_upload(self, media_id, filename):
         if filename.endswith('.png'):
@@ -317,6 +343,7 @@ class RCEdit:
         else:
             return items
 
+
     def item_add(self, page_id, media_id, x, y, w, h=0, tool='picture'):
         "Add item to page (aka weave)"
         data = dict(
@@ -334,6 +361,7 @@ class RCEdit:
         item_id = m.group(1)
         return item_id
 
+
     def item_update(self, item_id, x, y, w, h, r=0):
         "Fast item positioning update"
         data = {
@@ -349,15 +377,18 @@ class RCEdit:
         if rtext.strip():
             raise RCException("item_update failed")
 
+
     def item_lock(self, item_id, lock=True):
         rtext = self._post('/item/update-lock', data={f'lock[{item_id}]': 1 if lock else 0})
         if rtext.strip():
             raise RCException("item_lock failed")
 
+
     def item_get(self, item_id):
         rtext = self._get("/item/edit", params=dict(research=self.exposition, item=item_id))
         return self._ItemData()(rtext)
-        
+
+
     def item_set(self, item_id, **kwargs):
         """
         In kwargs, we need at least common[title] and style[top,left,width,height,rotate]
@@ -374,7 +405,8 @@ class RCEdit:
         rtext = self._post("/item/edit", data=data)
         if rtext.strip():
             raise RCException("item_set failed")
-        
+
+
     def item_remove(self, item_id):
         "Remove item from page (aka weave)"
         rtext = self._post("/item/remove", data={'research': self.exposition, 'item[]': item_id, 'confirmation': 'confirmation'})
@@ -383,7 +415,7 @@ class RCEdit:
 
 
     #### internal methods #####################################################
-    
+
     class _PageLister(HTMLParser):
         def __call__(self, html):
             self.items = {}
@@ -420,7 +452,7 @@ class RCEdit:
                 # pos == (1,3): date
                 if pos == (1,2):
                     self.items[self.item] = data
-                
+
 
     class _SetLister(HTMLParser):
         def __call__(self, html):
@@ -454,7 +486,8 @@ class RCEdit:
         def handle_data(self, data):
             if self.nest_tr == 1 and self.nest_td == 1 and self.cnt_td == 2:
                 self.items[self.item] = data
-                
+
+
     class _SimpleMediaLister(HTMLParser):
         def __call__(self, html):
             self.items = {}
@@ -489,8 +522,8 @@ class RCEdit:
         def handle_data(self, data):
             if self.nest_tr == 1 and self.nest_td == 1 and self.cnt_td == 2:
                 self.items[self.item] = (self.tool, data)
-                
-                
+
+
     class _ItemLister(HTMLParser):
         def __call__(self, html):
             self.items = {}
@@ -504,7 +537,8 @@ class RCEdit:
                     self.items[attrs['data-id']] = (attrs['data-tool'], attrs['data-title'])
                 except:
                     pass
-                  
+
+
     class _ItemData(HTMLParser):
         toolmatch = re.compile(r'edit\s*([^\s]+)\s*tool')
         bracketmatch = re.compile(r'([^\[]+)\[([^\]]+)\]')
@@ -556,14 +590,16 @@ class RCEdit:
                 self.select = None
             elif tag == 'textarea':
                 self.textarea = None
-                
+
+
     def _post(self, url, data=None, files=None, headers=None):
         r = self.session.post(f"{self.rcurl}{url}", data=data, files=files, headers=headers)
         self.last_response = r
         if r.status_code != 200:
             raise RCException(f'POST {url} failed with status code {r.status_code}')
         return r.text
-    
+
+
     def _get(self, url, params=None):
         r = self.session.get(f"{self.rcurl}{url}", params=params)
         self.last_response = r

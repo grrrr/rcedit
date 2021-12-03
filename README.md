@@ -4,7 +4,7 @@ rcedit – Programmatic access to Research Catalogue web interface
 Important note:
 ---------------
 
-The Research Catalogue (RC) API is not frozen!
+The Research Catalogue (RC) API is not published and its protocol is not frozen!
 Therefore, this Python module targets the API at the time of its creation. Nevertheless, it can work as a point of departure to interact with future API versions.
 
 
@@ -26,6 +26,10 @@ rc.login(username='my@email.com', password='goodpassword')
 pages = rc.page_list()
 print("Pages:", pages)
 # will print a dict of {page_id: page_name, ...}
+
+# list pages filtered by a regular expression
+pages = rc.page_list(r"Page [123]", regexp=True)
+print("Pages:", pages)
 
 # add new page (aka weave) to exposition
 # page_id = rc.page_add(page_name, description='all about my page')
