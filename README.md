@@ -1,15 +1,22 @@
 rcedit – Programmatic access to Research Catalogue web interface
 ================================================================
 
-Import editor class from rcedit module using
+Important note:
+---------------
+
+The Research Catalogue (RC) API is not frozen!
+Therefore, this Python module targets the API at the time of its creation. Nevertheless, it can work as a point of departure to interact with future API versions.
+
+
+Quick tour:
+-----------
+
+The `RCEdit` class provides access to many features of an RC exposition.
+
 ```
+# Import editor class from rcedit module using
 from rcedit import RCEdit
-```
 
-The `RCEdit` class provides access to most of the features of a Research catalogue exposition.
-
-Example:
-```
 # create RCEdit instance with exposition ID as argument
 rc = RCEdit(1234567)
 # log in using RC credentials

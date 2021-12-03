@@ -45,10 +45,27 @@ class RCEdit:
     def logout(self):
         self._get("/session/logout")
         
-    def page_list(self):
+    def page_list(self, page_name=None, firstonly=False, regexp=False):
+        "List pages (aka weaves), optionally filtered"
         rtext = self._post("/editor/weaves", data=dict(research=self.exposition))
-        return self._PageLister()(rtext)
+        pages = self._PageLister()(rtext)
         
+        if page_name is None:
+            crit = lambda x: True
+        else:
+            if regexp:
+                r = re.compile(page_name)
+                crit = lambda x: r.match(x) is not None
+            else:
+                crit = lambda x: x == page_name
+                
+        pages = [(pid,pnm) for pid,pnm in pages.items() if crit(pnm)]
+            
+        if firstonly:
+            return pages[0] if len(pages) else None
+        else:
+            return dict(pages)
+                
     def page_add(self, pagename, description=None, **kwargs):
         # kwargs can be 'style' or 'meta' dicts
         data = {
@@ -91,11 +108,29 @@ class RCEdit:
         'ceramic', 'print', 'construction', 'drawing', 'video', 'composition', 'movie',
     }
     
-    def mediaset_list(self):
-        "List media sets (aka works)"
-        
+    def mediaset_list(self, mediaset_name=None, firstonly=False, regexp=False):
+        "List media sets (aka works), optionally filtered"
         rtext = self._post('/editor/works', data=dict(research=self.exposition))
-        return self._SetLister()(rtext) # {set_id: set_name, ...}
+        mediasets = self._SetLister()(rtext) # {set_id: set_name, ...}
+
+        if mediaset_name is None:
+            crit = lambda x: True
+        else:
+            if regexp:
+                r = re.compile(mediaset_name)
+                crit = lambda x: r.match(x) is not None
+            else:
+                crit = lambda x: x == mediaset_name
+                
+        mediasets = [(msid,msnm) for msid,msnm in mediasets.items() if crit(msnm)]
+            
+        if firstonly:
+            return mediasets[0] if len(mediasets) else None
+        else:
+            return dict(mediasets)
+
+    def mediaset_find(self, ):
+        "Find media set by name"
 
     def mediaset_add(self, mediaset_name, mediaset_genre, authors, copyright, date=None):
         "Add new media set"
@@ -122,15 +157,41 @@ class RCEdit:
 
     media_types = {'image', 'audio'}
 
-    def media_list(self, mediaset_id=None):
+    def media_list(self, mediaset_id=None, media_name=None, media_type=None, firstonly=False, regexp=False):
+        # as of 2021-12, one must provide a weave ID
+        # for now, we simply take the first page of the exposition
+        # since media should be shared among all pages
+        pages = list(self.page_list())
         if mediaset_id is None:
             # from simple-media
-            rtext = self._post('/simple-media/list', data=dict(research=self.exposition))
-            return self._SimpleMediaLister()(rtext)
+            rtext = self._post('/simple-media/list', data=dict(research=self.exposition, weave=pages[0]))
+            media = self._SimpleMediaLister()(rtext)
         else:
-            rtext = self._post('/editor/work-children', data=dict(research=self.exposition, work=mediaset_id))
+            rtext = self._post('/editor/work-children', data=dict(research=self.exposition, work=mediaset_id, weave=pages[0]))
             lst = json.loads(rtext)
-            return {str(f['id']): (f['tool'], f['title']) for f in lst['files']}
+            media = {str(f['id']): (f['tool'], f['title']) for f in lst['files']}
+
+        if media_name is None:
+            critn = lambda n: True
+        else:
+            if regexp:
+                r = re.compile(media_name)
+                critn = lambda n: r.match(n) is not None
+            else:
+                critn = lambda n: n == media_name
+            
+        if media_type is None:
+            critt = lambda t: True
+        else:
+            critt = lambda t: t == media_type
+            
+        media = [(mid,(mtp,mnm)) for mid,(mtp,mnm) in media.items() if critn(mnm) and critt(mtp)]
+        
+        if firstonly:
+            return media[0] if len(media) else None
+        else:
+            return dict(media)
+
 
     def media_add(self, media_name, copyrightholder, media_type='image', license="cc-by-nc-nd", description='', mediaset_id=None):
         "Add media file to simple-media or set"
@@ -216,17 +277,52 @@ class RCEdit:
             }
             files = dict(media=(filename, f, mimetype))
             self._post("/file/edit", data=data, files=files)
-                        
-    def item_list(self, page_id):
-        "List items on page (aka weave)"
+
+
+    def item_list(self, page_id, item_name=None, item_type=None, firstonly=False, regexp=False):
+        "List items on page (aka weave), optionally filtered"
         rtext = self._post("/editor/content", data=dict(research=self.exposition, weave=page_id))
-        return self._ItemLister()(rtext)
-        
+        items = self._ItemLister()(rtext)
+
+        if item_name is None:
+            critn = lambda n: True
+        else:
+            if regexp:
+                r = re.compile(item_name)
+                critn = lambda n: r.match(n) is not None
+            else:
+                critn = lambda n: n == item_name
+
+        if item_type is None:
+            critt = lambda t: True
+        else:
+            critt = lambda t: t == item_type
+                
+        items = [(itid,(ittp,itnm)) for itid,(ittp,itnm) in items.items() if critn(itnm) and critt(ittp)]
+            
+        if firstonly:
+            return items[0] if len(items) else None
+        else:
+            return dict(items)
+
+
+    def item_find(self, page_id, item_name, item_type=None, firstonly=True):
+        "Find item by name (either item_name or item_type may be None, indicating 'any')"
+        items = [
+            iid for iid,(itp,inm) in self.item_list(page_id).items() 
+            if (item_name is None or inm == item_name) and (item_type is None or itp == item_type)
+        ]
+        if firstonly:
+            return items[0] if len(items) else None
+        else:
+            return items
+
     def item_add(self, page_id, media_id, x, y, w, h=0, tool='picture'):
         "Add item to page (aka weave)"
         data = dict(
             research=self.exposition,
             weave=page_id,
+            toolType=tool,
             tool=tool,
             file=media_id,
             left=x, top=y, width=w, height=h,
@@ -317,8 +413,13 @@ class RCEdit:
                 self.nest_td -= 1
 
         def handle_data(self, data):
-            if self.nest_tr == 1 and self.nest_td == 1 and self.cnt_td == 1:
-                self.items[self.item] = data
+            if self.nest_tr == 1:
+                pos = (self.nest_td, self.cnt_td)
+                # pos == (1,1): type (graphical, block, iframe)
+                # pos == (1,2): title
+                # pos == (1,3): date
+                if pos == (1,2):
+                    self.items[self.item] = data
                 
 
     class _SetLister(HTMLParser):
