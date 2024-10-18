@@ -134,6 +134,7 @@ class RCEdit:
         rtext = self._get("/weave/edit", params=dict(weave=page_id))
         return self._ItemData()(rtext)
 
+
     def page_options_set(self, page_id, **kwargs):
         """
         In kwargs, we need at least meta[title][en]
