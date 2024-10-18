@@ -150,7 +150,7 @@ class RCEdit:
         if rtext.strip():
             raise RCException("page_options_set failed")
 
-        
+
     license_options = {
         "all-rights-reserved", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd", "public-domain"        
     }
