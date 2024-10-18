@@ -129,6 +129,7 @@ class RCEdit:
         if rtext.strip():
             raise RCException("page_remove failed")
 
+
     def page_options_get(self, page_id):
         rtext = self._get("/weave/edit", params=dict(weave=page_id))
         return self._ItemData()(rtext)
@@ -149,6 +150,7 @@ class RCEdit:
         if rtext.strip():
             raise RCException("page_options_set failed")
 
+        
     license_options = {
         "all-rights-reserved", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd", "public-domain"        
     }
