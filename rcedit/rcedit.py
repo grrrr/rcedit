@@ -108,10 +108,10 @@ class RCEdit:
         if rtext.strip():
             raise RCException("page_remove failed")
 
+
     def page_options_get(self, page_id):
         rtext = self._get("/weave/edit", params=dict(weave=page_id))
         return self._ItemData()(rtext)
-
 
     def page_options_set(self, page_id, **kwargs):
         """
