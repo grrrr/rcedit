@@ -118,13 +118,16 @@ class RCEdit:
         """
         In kwargs, we need at least meta[title][en]
         """
-        data = dict(
-            weave=page_id,
-            submitbutton='submitbutton'
-        )
+        data = dict(weave=str(page_id))
+        subkeymatch = re.compile(r'([^\[]+)\[([^\]]+)\]') # matches "key[value]"
+
         for kk, kv in kwargs.items():
             for k,v in kv.items():
-                data[f'{kk}[{k}]'] = v
+                m = subkeymatch.match(k)
+                if m is None:
+                    data[f'{kk}[{k}]'] = v
+                else:
+                    data[f'{kk}[{m.group(1)}][{m.group(2)}]'] = v
 
         rtext = self._post("/weave/edit", data=data)
         if rtext.strip():
@@ -562,7 +565,7 @@ class RCEdit:
 
     class _ItemData(HTMLParser):
         toolmatch = re.compile(r'edit\s*([^\s]+)\s*tool')
-        bracketmatch = re.compile(r'([^\[]+)\[([^\]]+)\]')
+        bracketmatch = re.compile(r'([^\[]+)\[([^\]]+)\](\[[^\]]+\])?')
         
         def __call__(self, html):
             self.title = None
@@ -581,7 +584,7 @@ class RCEdit:
                     m = None
                 if m is not None:
                     self.title = m.group(1)
-            elif tag == 'input':  
+            elif tag == 'input':
                 tp = attrs.get('type', 'text')
                 m = self.bracketmatch.match(attrs['name'])
                 v = None
@@ -589,7 +592,10 @@ class RCEdit:
                     if tp != 'checkbox' or "checked" in attrs:
                         v = attrs['value']
                 if v is not None:
-                    self.data[m.group(1)][m.group(2)] = v
+                    vk = m.group(2)
+                    if m.group(3) is not None:
+                        vk += m.group(3)
+                    self.data[m.group(1)][vk] = v
             elif tag == 'select':
                 m = self.bracketmatch.match(attrs['name'])
                 if m is not None:
@@ -600,17 +606,21 @@ class RCEdit:
             elif tag == 'textarea':
                 m = self.bracketmatch.match(attrs['name'])
                 if m is not None:
-                    self.textarea = (m.group(1),m.group(2))
+                    vk = m.group(2)
+                    if m.group(3) is not None:
+                        vk += m.group(3)
+                    self.textarea = (m.group(1),vk)
             
         def handle_data(self, data):
             if self.textarea is not None:
                 self.data[self.textarea[0]][self.textarea[1]] = data
-            
+                self.textarea = None
+
         def handle_endtag(self, tag):
             if tag == 'select':
                 self.select = None
             elif tag == 'textarea':
-                self.textarea = None
+                pass #self.textarea = None
 
 
     def _post(self, url, data=None, files=None, headers=None):
