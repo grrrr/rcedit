@@ -37,6 +37,9 @@ print("Pages:", pages)
 # remove page
 # rc.page_remove(page_id)
 
+# Get page options
+rc.page_options_get(page_name)
+
 # list all media sets (shared among expositions)
 mediasets = rc.mediaset_list()
 print("Media sets:", mediasets)
