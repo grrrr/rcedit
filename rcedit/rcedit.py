@@ -1,5 +1,5 @@
 # rcedit – programmatic access to Research catalogue web interface
-# (c)2021 grrrr.org
+# (c)2021-2024 grrrr.org
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,6 +112,7 @@ class RCEdit:
     def page_options_get(self, page_id):
         rtext = self._get("/weave/edit", params=dict(weave=page_id))
         return self._ItemData()(rtext)
+
 
     def page_options_set(self, page_id, **kwargs):
         """
