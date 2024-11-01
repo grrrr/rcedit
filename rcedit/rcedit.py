@@ -74,12 +74,12 @@ class RCEdit:
     def meta_set(self, title=None, description=None, **kwargs):
         data = dict(research=self.exposition)
 
+        data.update(convert_params(**kwargs))
+
         if title:
             data['meta[title][en]'] = title
         if description:
             data['meta[description][en]'] = description
-
-        data.update(convert_params(**kwargs))
 
         rtext = self._post("/research/edit", data=data)
         if rtext.strip():
@@ -125,11 +125,11 @@ class RCEdit:
         #    'style[marginbottom]': 0,
         #    'submitbutton': 'submitbutton',
         }
+
+        data.update(convert_params(**kwargs))
+
         if description:
             data['meta[description][en]'] = description
-        for kk, kv in kwargs.items():
-            for k,v in kv.items():
-                data[f'{kk}[{k}]'] = v
 
         page_id = self._post("/weave/add", data=data)
         try:
@@ -451,9 +451,7 @@ class RCEdit:
             item=item_id,
             submitbutton='submitbutton'
         )
-        for kk, kv in kwargs.items():
-            for k,v in kv.items():
-                data[f'{kk}[{k}]'] = v
+        data.update(convert_params(**kwargs))
 
         rtext = self._post("/item/edit", data=data)
         if rtext.strip():
