@@ -25,6 +25,21 @@ import time
 from collections import defaultdict
 
 
+subkeymatch = re.compile(r'([^\[]+)\[([^\]]+)\]') # matches "key[value]"
+
+def convert_params(**kwargs):
+    data = dict()
+
+    for kk, kv in kwargs.items():
+        for k,v in kv.items():
+            m = subkeymatch.match(k)
+            if m is None:
+                data[f'{kk}[{k}]'] = v
+            else:
+                data[f'{kk}[{m.group(1)}][{m.group(2)}]'] = v
+    return data
+
+
 class RCException(Exception):
     def __init__(self, reason=""):
         self.reason = reason
@@ -48,6 +63,27 @@ class RCEdit:
 
     def logout(self):
         self._get("/session/logout")
+
+
+    def meta_get(self):
+        rtext = self._get("/research/edit", params=dict(research=self.exposition))
+        return self._ItemData()(rtext)
+
+
+    # NOTE: meta_set doesn't currently work!
+    def meta_set(self, title=None, description=None, **kwargs):
+        data = dict(research=self.exposition)
+
+        if title:
+            data['meta[title][en]'] = title
+        if description:
+            data['meta[description][en]'] = description
+
+        data.update(convert_params(**kwargs))
+
+        rtext = self._post("/research/edit", data=data)
+        if rtext.strip():
+            raise RCException("meta_set failed")
 
 
     def page_list(self, page_name=None, firstonly=False, regexp=False):
@@ -119,15 +155,7 @@ class RCEdit:
         In kwargs, we need at least meta[title][en]
         """
         data = dict(weave=str(page_id))
-        subkeymatch = re.compile(r'([^\[]+)\[([^\]]+)\]') # matches "key[value]"
-
-        for kk, kv in kwargs.items():
-            for k,v in kv.items():
-                m = subkeymatch.match(k)
-                if m is None:
-                    data[f'{kk}[{k}]'] = v
-                else:
-                    data[f'{kk}[{m.group(1)}][{m.group(2)}]'] = v
+        data.update(convert_params(**kwargs))
 
         rtext = self._post("/weave/edit", data=data)
         if rtext.strip():
@@ -597,9 +625,14 @@ class RCEdit:
                         vk += m.group(3)
                     self.data[m.group(1)][vk] = v
             elif tag == 'select':
-                m = self.bracketmatch.match(attrs['name'])
-                if m is not None:
-                    self.select = (m.group(1),m.group(2))
+                try:
+                    attr_name = attrs['name']
+                except KeyError:
+                    pass
+                else:
+                    m = self.bracketmatch.match(attr_name)
+                    if m is not None:
+                        self.select = (m.group(1),m.group(2))
             elif tag == 'option' and self.select is not None:
                 if 'selected' in attrs:
                     self.data[self.select[0]][self.select[1]] = attrs['value']
@@ -624,6 +657,7 @@ class RCEdit:
 
 
     def _post(self, url, data=None, files=None, headers=None):
+        print("POST", url, data)
         r = self.session.post(f"{self.rcurl}{url}", data=data, files=files, headers=headers)
         self.last_response = r
         if r.status_code != 200:
