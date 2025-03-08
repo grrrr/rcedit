@@ -20,5 +20,4 @@ push_github:
       --form variables[PARENT_PROJECT_PATH]=$CI_PROJECT_PATH
       --form variables[PARENT_PROJECT_NAME]=$CI_PROJECT_NAME
       --form variables[PARENT_PROJECT_REF]=$CI_COMMIT_REF_NAME
-      --form variables[PARENT_JOB_TOKEN]=$CI_JOB_TOKEN
       ${CI_API_V4_URL}/projects/$PUSH_GITHUB_PROJECT_ID/trigger/pipeline
