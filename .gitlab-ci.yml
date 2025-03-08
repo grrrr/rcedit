@@ -1,0 +1,24 @@
+push_github:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  tags:
+    - docker
+  image: debian:bookworm-slim
+  before_script:
+    # prepare environment
+    - apt-get update -qq || true
+    - apt-get install curl  -yy
+  variables:
+    PUSH_GITHUB_PROJECT_ID: 178
+  script:
+    # trigger push_github project
+    - 
+      curl --request POST 
+      --form token=$PUSH_GITHUB_TOKEN 
+      --form ref=main 
+      --form variables[PARENT_PROJECT_PATH]=$CI_PROJECT_PATH
+      --form variables[PARENT_PROJECT_NAME]=$CI_PROJECT_NAME
+      --form variables[PARENT_PROJECT_REF]=$CI_COMMIT_REF_NAME
+      --form variables[PARENT_JOB_TOKEN]=$CI_JOB_TOKEN
+      ${CI_API_V4_URL}/projects/$PUSH_GITHUB_PROJECT_ID/trigger/pipeline
