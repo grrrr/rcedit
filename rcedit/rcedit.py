@@ -25,21 +25,6 @@ import time
 from collections import defaultdict
 
 
-subkeymatch = re.compile(r'([^\[]+)\[([^\]]+)\]') # matches "key[value]"
-
-def convert_params(**kwargs):
-    data = dict()
-
-    for kk, kv in kwargs.items():
-        for k,v in kv.items():
-            m = subkeymatch.match(k)
-            if m is None:
-                data[f'{kk}[{k}]'] = v
-            else:
-                data[f'{kk}[{m.group(1)}][{m.group(2)}]'] = v
-    return data
-
-
 class RCException(Exception):
     def __init__(self, reason=""):
         self.reason = reason
@@ -673,3 +658,19 @@ class RCEdit:
         if r.status_code != 200:
             raise RCException(f'GET {url} failed with status code {r.status_code}')
         return r.text
+
+
+    subkeymatch = re.compile(r'([^\[]+)\[([^\]]+)\]') # matches "key[value]"
+
+    @staticmethod
+    def convert_params(**kwargs):
+        data = dict()
+
+        for kk, kv in kwargs.items():
+            for k,v in kv.items():
+                m = RCEdit.subkeymatch.match(k)
+                if m is None:
+                    data[f'{kk}[{k}]'] = v
+                else:
+                    data[f'{kk}[{m.group(1)}][{m.group(2)}]'] = v
+        return data
