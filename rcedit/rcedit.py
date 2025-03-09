@@ -134,6 +134,7 @@ class RCEdit:
         rtext = self._get("/weave/edit", params=dict(weave=page_id))
         return self._ItemData()(rtext)
 
+
     def page_options_set(self, page_id, **kwargs):
         """
         In kwargs, we need at least meta[title][en]
@@ -149,6 +150,7 @@ class RCEdit:
         rtext = self._post("/weave/edit", data=data)
         if rtext.strip():
             raise RCException("page_options_set failed")
+
 
     license_options = {
         "all-rights-reserved", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd", "public-domain"        
