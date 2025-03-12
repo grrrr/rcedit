@@ -2,6 +2,6 @@ push_github:
   stage: deploy
   tags:
     - docker
-  image: $CI_REGISTRY/thomas/push_github
+  image: $CI_REGISTRY/docker/push_github
   script:
     - echo "Pushing to github"
